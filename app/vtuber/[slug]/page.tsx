@@ -9,7 +9,9 @@ import { PageShell } from '../../../components/layout/page-shell';
 import { formatCount, getSocialUrl, getYoutubeUrl } from '../../../lib/utils/vtuber';
 
 interface VtuberPageProps {
-  params: { slug: string };
+  params: Promise<{
+    slug: string;
+  }>;
 }
 
 export async function generateStaticParams() {
@@ -17,31 +19,69 @@ export async function generateStaticParams() {
   return vtubers.map((vtuber) => ({ slug: vtuber.slug }));
 }
 
-export async function generateMetadata({ params }: VtuberPageProps): Promise<Metadata> {
-  const vtuber = await getVtuberBySlug(params.slug);
+export async function generateMetadata({
+  params,
+}: VtuberPageProps): Promise<Metadata> {
+  const { slug } = await params;
+
+  const vtuber = await getVtuberBySlug(slug);
 
   if (!vtuber) {
-    return { title: 'VTCol Hub', description: 'Directorio de VTubers colombianos.' };
+    return {
+      title: 'VTuber no encontrada',
+    };
   }
 
   return {
     title: `${vtuber.name} | VTCol Hub`,
     description: vtuber.bio,
-    openGraph: { title: `${vtuber.name} | VTCol Hub`, description: vtuber.bio, images: [vtuber.banner || vtuber.avatar] },
-    twitter: { card: 'summary_large_image', title: `${vtuber.name} | VTCol Hub`, description: vtuber.bio, images: [vtuber.banner || vtuber.avatar] },
+    openGraph: {
+      title: `${vtuber.name} | VTCol Hub`,
+      description: vtuber.bio,
+      images: [vtuber.banner || vtuber.avatar],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${vtuber.name} | VTCol Hub`,
+      description: vtuber.bio,
+      images: [vtuber.banner || vtuber.avatar],
+    },
   };
 }
 
-export default async function VtuberPage({ params }: VtuberPageProps) {
-  const vtuber = await getVtuberBySlug(params.slug);
-  if (!vtuber) notFound();
+export default async function VtuberPage({
+  params,
+}: VtuberPageProps) {
+  const { slug } = await params;
+
+  const vtuber = await getVtuberBySlug(slug);
+
+  if (!vtuber) {
+    notFound();
+  }
 
   const isLive = vtuber.is_live;
-  const twitchUrl = vtuber.twitch_username ? getSocialUrl('twitch', vtuber.twitch_username) : null;
-  const youtubeUrl = vtuber.youtube_channel_id ? getYoutubeUrl(vtuber.youtube_channel_id) : null;
-  const tiktokUrl = vtuber.tiktok ? getSocialUrl('tiktok', vtuber.tiktok) : null;
-  const instagramUrl = vtuber.instagram ? getSocialUrl('instagram', vtuber.instagram) : null;
-  const twitterUrl = vtuber.twitter ? getSocialUrl('twitter', vtuber.twitter) : null;
+
+  const twitchUrl = vtuber.twitch_username
+    ? getSocialUrl('twitch', vtuber.twitch_username)
+    : null;
+
+  const youtubeUrl = vtuber.youtube_channel_id
+    ? getYoutubeUrl(vtuber.youtube_channel_id)
+    : null;
+
+  const tiktokUrl = vtuber.tiktok
+    ? getSocialUrl('tiktok', vtuber.tiktok)
+    : null;
+
+  const instagramUrl = vtuber.instagram
+    ? getSocialUrl('instagram', vtuber.instagram)
+    : null;
+
+  const twitterUrl = vtuber.twitter
+    ? getSocialUrl('twitter', vtuber.twitter)
+    : null;
+     null;
   return (
     <PageShell>
       <main className="space-y-10">
