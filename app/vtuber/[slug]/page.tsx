@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -7,7 +8,18 @@ import { LinkButton } from '../../../components/ui/link-button';
 import { PageShell } from '../../../components/layout/page-shell';
 import { formatCount, getSocialUrl, getYoutubeUrl } from '../../../lib/utils/vtuber';
 
+interface Params {
+  slug: string;
+}
 
+interface GenerateMetadataProps {
+  params: Params;
+}
+
+interface PageProps {
+  params: Params;
+  // searchParams?: Record<string, string | string[] | undefined>;
+}
 
 export async function generateStaticParams() {
   const vtubers = await getVtubers();
@@ -17,11 +29,8 @@ export async function generateStaticParams() {
   }));
 }
 
-export async function generateMetadata(
-  { params }: { params: Promise<{ slug: string }> }
-): Promise<Metadata> {
-
-  const { slug } = await params;
+export async function generateMetadata({ params }: GenerateMetadataProps): Promise<Metadata> {
+  const { slug } = params;
 
   const vtuber = await getVtuberBySlug(slug);
 
@@ -48,10 +57,8 @@ export async function generateMetadata(
   };
 }
 
-export default async function VtuberPage(
-  { params }: { params: Promise<{ slug: string }> }
-) {
-  const { slug } = await params;
+export default async function VtuberPage({ params }: PageProps) {
+  const { slug } = params;
 
   const vtuber = await getVtuberBySlug(slug);
 
@@ -59,28 +66,27 @@ export default async function VtuberPage(
     notFound();
   }
 
+  const isLive = vtuber.is_live;
 
-const isLive = vtuber.is_live;
+  const twitchUrl = vtuber.twitch_username
+    ? getSocialUrl('twitch', vtuber.twitch_username)
+    : null;
 
-const twitchUrl = vtuber.twitch_username
-  ? getSocialUrl('twitch', vtuber.twitch_username)
-  : null;
+  const youtubeUrl = vtuber.youtube_channel_id
+    ? getYoutubeUrl(vtuber.youtube_channel_id)
+    : null;
 
-const youtubeUrl = vtuber.youtube_channel_id
-  ? getYoutubeUrl(vtuber.youtube_channel_id)
-  : null;
+  const tiktokUrl = vtuber.tiktok
+    ? getSocialUrl('tiktok', vtuber.tiktok)
+    : null;
 
-const tiktokUrl = vtuber.tiktok
-  ? getSocialUrl('tiktok', vtuber.tiktok)
-  : null;
+  const instagramUrl = vtuber.instagram
+    ? getSocialUrl('instagram', vtuber.instagram)
+    : null;
 
-const instagramUrl = vtuber.instagram
-  ? getSocialUrl('instagram', vtuber.instagram)
-  : null;
-  
-const twitterUrl = vtuber.twitter
-  ? getSocialUrl('twitter', vtuber.twitter)
-  : null;
+  const twitterUrl = vtuber.twitter
+    ? getSocialUrl('twitter', vtuber.twitter)
+    : null;
 
   return (
     <PageShell>
@@ -89,12 +95,11 @@ const twitterUrl = vtuber.twitter
           {/* Banner */}
           <div className="relative h-[340px] overflow-hidden">
             <Image
-             src={vtuber.banner || vtuber.avatar}
-             alt={`${vtuber.name} banner`}
-             fill
-             priority
-             className="object-cover opacity-70"
-              
+              src={vtuber.banner || vtuber.avatar}
+              alt={`${vtuber.name} banner`}
+              fill
+              priority
+              className="object-cover opacity-70"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-r from-violet-700/20 via-transparent to-fuchsia-600/20" />
@@ -275,21 +280,19 @@ const twitterUrl = vtuber.twitter
                           className="rounded-2xl overflow-hidden border border-white/10 hover:border-violet-500/40 transition"
                         >
                           <Link href={clip.url} target="_blank">
-                           
-                              <div className="relative w-full h-44">
-                                <Image
-                                  src={clip.thumbnail}
-                                  alt={clip.title}
-                                  fill
-                                  className="object-cover"
-                                />
-                              </div>
-                              <div className="p-4 bg-slate-950">
-                                <p className="text-xs text-slate-500 mt-1">
+                            <div className="relative w-full h-44">
+                              <Image
+                                src={clip.thumbnail}
+                                alt={clip.title}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                            <div className="p-4 bg-slate-950">
+                              <p className="text-xs text-slate-500 mt-1">
                                 {formatCount(clip.views)} vistas
-                                </p>
-                              </div>
-                            
+                              </p>
+                            </div>
                           </Link>
                         </div>
                       ))}
