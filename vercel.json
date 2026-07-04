@@ -1,8 +1,13 @@
 {
   "crons": [
     {
+<<<<<<< HEAD
       "path": "/api/cron/update",
       "schedule": "*/* 10 * * *"
+=======
+      "path": "/api/cron",
+      "schedule": "0 10 * * *"
+>>>>>>> 0b3f4bf37391388ccb6065474a52c6f717cdb107
     }
   ]
 }
