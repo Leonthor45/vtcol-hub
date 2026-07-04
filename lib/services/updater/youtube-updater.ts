@@ -45,7 +45,7 @@ export async function updateYoutube() {
     }
 
     const { error: updateError } = await supabaseAdmin
-      .from('vtubers' as any)
+      .from('vtubers')
       .update({
         youtube_subscribers: youtube.subscribers,
         avatar: youtube.avatar,
