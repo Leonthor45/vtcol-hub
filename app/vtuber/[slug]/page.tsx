@@ -16,7 +16,10 @@ interface VtuberPageProps {
 
 export async function generateStaticParams() {
   const vtubers = await getVtubers();
-  return vtubers.map((vtuber) => ({ slug: vtuber.slug }));
+
+  return vtubers.map((vtuber) => ({
+    slug: vtuber.slug,
+  }));
 }
 
 export async function generateMetadata({
@@ -60,28 +63,28 @@ export default async function VtuberPage({
     notFound();
   }
 
-  const isLive = vtuber.is_live;
 
-  const twitchUrl = vtuber.twitch_username
-    ? getSocialUrl('twitch', vtuber.twitch_username)
-    : null;
+const isLive = vtuber.is_live;
 
-  const youtubeUrl = vtuber.youtube_channel_id
-    ? getYoutubeUrl(vtuber.youtube_channel_id)
-    : null;
+const twitchUrl = vtuber.twitch_username
+  ? getSocialUrl('twitch', vtuber.twitch_username)
+  : null;
 
-  const tiktokUrl = vtuber.tiktok
-    ? getSocialUrl('tiktok', vtuber.tiktok)
-    : null;
+const youtubeUrl = vtuber.youtube_channel_id
+  ? getYoutubeUrl(vtuber.youtube_channel_id)
+  : null;
 
-  const instagramUrl = vtuber.instagram
-    ? getSocialUrl('instagram', vtuber.instagram)
-    : null;
+const tiktokUrl = vtuber.tiktok
+  ? getSocialUrl('tiktok', vtuber.tiktok)
+  : null;
 
-  const twitterUrl = vtuber.twitter
-    ? getSocialUrl('twitter', vtuber.twitter)
-    : null;
-     null;
+const instagramUrl = vtuber.instagram
+  ? getSocialUrl('instagram', vtuber.instagram)
+  : null;
+
+const twitterUrl = vtuber.twitter
+  ? getSocialUrl('twitter', vtuber.twitter)
+  : null;
   return (
     <PageShell>
       <main className="space-y-10">
@@ -275,7 +278,7 @@ export default async function VtuberPage({
                           className="rounded-2xl overflow-hidden border border-white/10 hover:border-violet-500/40 transition"
                         >
                           <Link href={clip.url} target="_blank">
-                            <a className="block">
+                           
                               <div className="relative w-full h-44">
                                 <Image
                                   src={clip.thumbnail}
@@ -285,10 +288,11 @@ export default async function VtuberPage({
                                 />
                               </div>
                               <div className="p-4 bg-slate-950">
-                                <p className="text-sm text-slate-300">{clip.title}</p>
-                                <p className="text-xs text-slate-500 mt-1">{formatCount(clip.views)} vistas</p>
+                                <p className="text-xs text-slate-500 mt-1">
+                                {formatCount(clip.views)} vistas
+                                </p>
                               </div>
-                            </a>
+                            
                           </Link>
                         </div>
                       ))}
