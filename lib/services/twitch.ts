@@ -136,7 +136,7 @@ export async function getTwitchChannels(
 
 result.set(user.login.toLowerCase(), {
   username: user.login,
- displayName: user.display_name,
+  displayName: user.display_name,
 
   avatar: user.profile_image_url,
   banner: user.offline_image_url || null,

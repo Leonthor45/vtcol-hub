@@ -37,4 +37,13 @@ export interface Vtuber {
 
   created_at: string;
   updated_at: string;
+
+  // 👇 AÑADE ESTO
+  clips?: {
+    id: string;
+    title: string;
+    url: string;
+    thumbnail: string;
+    views: number;
+  }[];
 }

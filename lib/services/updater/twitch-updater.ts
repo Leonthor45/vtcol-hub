@@ -46,32 +46,27 @@ export async function updateTwitch() {
       return;
     }
 
-    const { error: updateError } = await supabaseAdmin
-      .from('vtubers')
-      .update({
-        // Avatar siempre desde Twitch
-        avatar: twitch.avatar,
+   const { error: updateError } = await supabaseAdmin
+  .from('vtubers' as any)
+  .update({
+    avatar: twitch.avatar,
 
-        // Banner:
-        // 1. Twitch
-        // 2. Banner existente en Supabase
-        // 3. Avatar
-        banner:
-          twitch.banner ||
-          vtuber.banner ||
-          twitch.avatar,
+    banner:
+      twitch.banner ||
+      vtuber.banner ||
+      twitch.avatar,
 
-        is_live: twitch.isLive,
+    is_live: twitch.isLive,
 
-        twitch_viewers: twitch.viewers,
+    twitch_viewers: twitch.viewers,
 
-        current_game: twitch.game,
+    current_game: twitch.game,
 
-        stream_title: twitch.title,
+    stream_title: twitch.title,
 
-        twitch_updated_at: new Date().toISOString(),
-      })
-      .eq('id', vtuber.id);
+    twitch_updated_at: new Date().toISOString(),
+  } as any)
+  .eq('id', vtuber.id);
 
     if (updateError) {
       console.error(updateError);
