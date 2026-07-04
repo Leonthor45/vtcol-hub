@@ -8,20 +8,15 @@ import { formatCount, getSocialUrl, getYoutubeUrl } from '../../../lib/utils/vtu
 
 export const revalidate = 60;
 
-export async function generateMetadata({ params }: VtuberPageProps): Promise<Metadata> {
-
 interface VtuberPageProps {
   params: Promise<{
     slug: string;
   }>;
 }
 
-export async function generateStaticParams() {
-  const vtubers = await getVtubers();
-  return vtubers.map((vtuber) => ({ slug: vtuber.slug }));
-}
-
-export async function generateMetadata({ params }: VtuberPageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: VtuberPageProps): Promise<Metadata> {
   const { slug } = await params;
   const vtuber = await getVtuberBySlug(slug);
 
@@ -37,7 +32,6 @@ export async function generateMetadata({ params }: VtuberPageProps): Promise<Met
     description: vtuber.bio,
   };
 }
-
 export default async function VtuberPage({ params }: VtuberPageProps) {
   const { slug } = await params;
   const vtuber = await getVtuberBySlug(slug);
