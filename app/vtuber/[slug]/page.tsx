@@ -9,9 +9,9 @@ import { PageShell } from '../../../components/layout/page-shell';
 import { formatCount, getSocialUrl, getYoutubeUrl } from '../../../lib/utils/vtuber';
 
 interface VtuberPageProps {
-  params: Promise<{
+  params: {
     slug: string;
-  }>;
+  };
 }
 
 export async function generateStaticParams() {
@@ -25,7 +25,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: VtuberPageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug } = params;
 
   const vtuber = await getVtuberBySlug(slug);
 
@@ -55,7 +55,7 @@ export async function generateMetadata({
 export default async function VtuberPage({
   params,
 }: VtuberPageProps) {
-  const { slug } = await params;
+  const { slug } = params;
 
   const vtuber = await getVtuberBySlug(slug);
 
