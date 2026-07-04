@@ -1,6 +1,6 @@
 'use client';
 
-import type { Vtuber } from '../../lib/types/vtuber';
+import type { Vtuber } from '../../types/vtuber';
 import { SearchBar } from './search-bar';
 import { VtuberCard } from '../cards/vtuber-card';
 import { useVtuberSearch } from '../../hooks/useVtuberSearch';

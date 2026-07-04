@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { Vtuber } from '../lib/types/vtuber';
+import type { Vtuber } from '../types/vtuber';
 
 export type SortOption =
   | 'live'

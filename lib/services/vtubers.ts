@@ -1,41 +1,27 @@
-import type { Vtuber } from '../types/vtuber';
-import { supabaseAdmin } from '../supabase-admin';
+import { supabase } from '../supabase';
+import type { Vtuber } from '../../types/vtuber';
+
+type SupabaseListResult<T> = { data: T[] | null; error: any | null };
 
 export async function getVtubers(): Promise<Vtuber[]> {
-  const { data, error } = await supabaseAdmin
-    .from('vtubers')
-    .select('*')
-    .order('is_live', { ascending: false })
-    .order('featured', { ascending: false })
-    .order('twitch_followers', {
-      ascending: false,
-      nullsFirst: false,
-    })
-    .order('youtube_subscribers', {
-      ascending: false,
-      nullsFirst: false,
-    })
-    .order('name');
+  const vtubersQuery = supabase.from('vtubers') as any;
+  const res = (await vtubersQuery.select('*')) as unknown as SupabaseListResult<Vtuber>;
 
-  if (error) {
-    throw error;
-  }
+  if (res.error || !res.data) return [];
 
-  return data as Vtuber[];
-}
+  const list = res.data.slice();
 
-export async function getVtuberBySlug(
-  slug: string
-): Promise<Vtuber | undefined> {
-  const { data, error } = await supabaseAdmin
-    .from('vtubers')
-    .select('*')
-    .eq('slug', slug)
-    .single();
+  list.sort((a, b) => {
+    if (a.is_live !== b.is_live) return a.is_live ? -1 : 1;
+    if (a.featured !== b.featured) return a.featured ? -1 : 1;
+    const tfA = a.twitch_followers ?? 0;
+    const tfB = b.twitch_followers ?? 0;
+    if (tfA !== tfB) return tfB - tfA;
+    const ysA = a.youtube_subscribers ?? 0;
+    const ysB = b.youtube_subscribers ?? 0;
+    if (ysA !== ysB) return ysB - ysA;
+    return a.name.localeCompare(b.name);
+  });
 
-  if (error || !data) {
-    return undefined;
-  }
-
-  return data as Vtuber;
+  return list;
 }

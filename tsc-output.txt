@@ -1,0 +1,9 @@
+app/vtuber/[slug]/page.tsx(5,10): error TS2724: '"../../../lib/services/vtubers"' has no exported member named 'getVtuberBySlug'. Did you mean 'getVtubers'?
+app/vtuber/[slug]/page.tsx(276,54): error TS7006: Parameter 'clip' implicitly has an 'any' type.
+components/cards/vtuber-card.tsx(4,15): error TS2305: Module '"../../lib/types/vtuber"' has no exported member 'Vtuber'.
+components/search/vtuber-directory.tsx(3,15): error TS2305: Module '"../../lib/types/vtuber"' has no exported member 'Vtuber'.
+hooks/useVtuberSearch.ts(2,15): error TS2305: Module '"../lib/types/vtuber"' has no exported member 'Vtuber'.
+lib/services/vtuber.ts(3,15): error TS2305: Module '"../types/vtuber"' has no exported member 'Vtuber'.
+lib/services/vtuber.ts(15,9): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+lib/services/vtubers.ts(3,15): error TS2305: Module '"../types/vtuber"' has no exported member 'Vtuber'.
+scripts/import-vtubers.ts(3,31): error TS2307: Cannot find module '../supabase-admin' or its corresponding type declarations.

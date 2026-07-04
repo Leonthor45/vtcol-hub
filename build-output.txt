@@ -1,0 +1,22 @@
+
+> vtcol-hub@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.5
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+Failed to compile.
+
+./lib/services/vtubers.ts:33:9
+Type error: Argument of type 'string' is not assignable to parameter of type 'never'.
+
+[0m [90m 31 |[39m     [33m.[39m[36mfrom[39m([32m'vtubers'[39m)[0m
+[0m [90m 32 |[39m     [33m.[39mselect([32m'*'[39m)[0m
+[0m[31m[1m>[22m[39m[90m 33 |[39m     [33m.[39meq([32m'slug'[39m[33m,[39m slug)[0m
+[0m [90m    |[39m         [31m[1m^[22m[39m[0m
+[0m [90m 34 |[39m     [33m.[39msingle()[33m;[39m[0m
+[0m [90m 35 |[39m[0m
+[0m [90m 36 |[39m   [36mif[39m (error [33m||[39m [33m![39mdata) {[0m

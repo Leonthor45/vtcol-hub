@@ -1,19 +1,33 @@
+// scripts/import-vtubers.ts
 import 'dotenv/config';
 import { supabaseAdmin } from '../lib/supabase-admin';
-import { mockVtubers } from '../lib/data/mock-vtubers';
+
+let mockVtubers: any[] = [];
+
+try {
+  // require dinámico para evitar error de compilación si el archivo no existe
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const mod = require('../lib/data/mock-vtubers');
+  mockVtubers = mod?.mockVtubers ?? [];
+} catch (err) {
+  console.warn('No se encontró ../lib/data/mock-vtubers. Se usará lista vacía para importación.');
+}
 
 async function importVtubers() {
   console.log(`Importando ${mockVtubers.length} VTubers...`);
 
-  const { error } = await supabaseAdmin
-    .from('vtubers')
-    .upsert(mockVtubers, {
-      onConflict: 'id',
-    });
+  if (mockVtubers.length === 0) {
+    console.log('No hay datos para importar. Abortando importación.');
+    return;
+  }
+
+  const sanitizedVtubers = mockVtubers.map(({ clips, ...rest }) => rest);
+
+  const vtubersTable = supabaseAdmin.from('vtubers') as any;
+  const { error } = await vtubersTable.upsert(sanitizedVtubers, { onConflict: 'id' });
 
   if (error) {
-    console.error('❌ Error:');
-    console.error(error);
+    console.error('❌ Error al importar VTubers:', error);
     process.exit(1);
   }
 

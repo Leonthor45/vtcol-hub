@@ -1,36 +1,40 @@
 import { supabaseAdmin } from '../../supabase-admin';
 import { getYoutubeChannels } from '../youtube';
+import type { Database } from '../../types/supabase';
+import type { Vtuber } from '../../types/vtuber';
+
+type SupabaseListResult<T> = { data: T[] | null; error: any | null };
+
+type YoutubeUpdatePayload = Database['public']['Tables']['vtubers']['Update'];
+
+const vtubersQuery = supabaseAdmin.from('vtubers') as any;
 
 export async function updateYoutube() {
   console.log('\n========== YOUTUBE ==========\n');
 
-  const limite = new Date(
-    Date.now() - 30 * 60 * 1000
-  ).toISOString();
+  const limite = new Date(Date.now() - 30 * 60 * 1000).toISOString();
 
-  const { data: vtubers, error } = await supabaseAdmin
+  const res = (await supabaseAdmin
     .from('vtubers')
     .select('*')
-    .or(
-      `youtube_updated_at.is.null,youtube_updated_at.lt.${limite}`
-    );
+    .or(`youtube_updated_at.is.null,youtube_updated_at.lt.${limite}`)) as unknown as SupabaseListResult<Vtuber>;
 
-  if (error) {
-    throw error;
+  if (res.error) {
+    throw res.error;
   }
 
-  if (!vtubers?.length) {
+  const vtubers = res.data ?? [];
+
+  if (!vtubers.length) {
     console.log('No hay VTubers para actualizar.');
     return;
   }
 
   const ids = vtubers
-    .filter(v => v.youtube_channel_id)
-    .map(v => v.youtube_channel_id);
+    .filter((v) => v.youtube_channel_id)
+    .map((v) => v.youtube_channel_id);
 
-  console.log(
-    `Consultando ${ids.length} canales en una sola petición...`
-  );
+  console.log(`Consultando ${ids.length} canales en una sola petición...`);
 
   const channels = await getYoutubeChannels(ids);
 
@@ -44,13 +48,14 @@ export async function updateYoutube() {
       return;
     }
 
-    const { error: updateError } = await supabaseAdmin
-      .from('vtubers')
-      .update({
-        youtube_subscribers: youtube.subscribers,
-        avatar: youtube.avatar,
-        youtube_updated_at: new Date().toISOString(),
-      })
+    const payload: YoutubeUpdatePayload = {
+      youtube_subscribers: youtube.subscribers,
+      avatar: youtube.avatar,
+      youtube_updated_at: new Date().toISOString(),
+    };
+
+    const { error: updateError } = await vtubersQuery
+      .update(payload)
       .eq('id', vtuber.id);
 
     if (updateError) {

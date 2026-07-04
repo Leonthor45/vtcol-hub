@@ -1,0 +1,5 @@
+.next\types\app\layout.ts
+.next\types\app\page.ts
+.next\types\app\vtuber\[slug]\page.ts
+app\vtuber\[slug]\page.tsx
+node_modules\next\dist\shared\lib\utils.d.ts

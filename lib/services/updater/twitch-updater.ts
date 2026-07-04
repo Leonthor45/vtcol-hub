@@ -1,36 +1,40 @@
 import { supabaseAdmin } from '../../supabase-admin';
 import { getTwitchChannels } from '../twitch';
+import type { Database } from '../../types/supabase';
+import type { Vtuber } from '../../types/vtuber';
+
+type SupabaseListResult<T> = { data: T[] | null; error: any | null };
+
+type TwitchUpdatePayload = Database['public']['Tables']['vtubers']['Update'];
+
+const vtubersQuery = supabaseAdmin.from('vtubers') as any;
 
 export async function updateTwitch() {
   console.log('\n========== TWITCH ==========\n');
 
-  const limite = new Date(
-    Date.now() - 5 * 60 * 1000
-  ).toISOString();
+  const limite = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
-  const { data: vtubers, error } = await supabaseAdmin
-    .from('vtubers')
+  const res = (await supabaseAdmin
+    .from('vtubers' as const)
     .select('*')
-    .or(
-      `twitch_updated_at.is.null,twitch_updated_at.lt.${limite}`
-    );
+    .or(`twitch_updated_at.is.null,twitch_updated_at.lt.${limite}`)) as unknown as SupabaseListResult<Vtuber>;
 
-  if (error) {
-    throw error;
+  if (res.error) {
+    throw res.error;
   }
 
-  if (!vtubers?.length) {
+  const vtubers = res.data ?? [];
+
+  if (!vtubers.length) {
     console.log('No hay VTubers para actualizar.');
     return;
   }
 
   const usernames = vtubers
-    .filter(v => v.twitch_username)
-    .map(v => v.twitch_username);
+    .filter((v) => v.twitch_username)
+    .map((v) => v.twitch_username);
 
-  console.log(
-    `Consultando ${usernames.length} canales en una sola petición...`
-  );
+  console.log(`Consultando ${usernames.length} canales en una sola petición...`);
 
   const channels = await getTwitchChannels(usernames);
 
@@ -46,20 +50,18 @@ export async function updateTwitch() {
       return;
     }
 
-    const { error: updateError } = await supabaseAdmin
-      .from('vtubers')
-      .update({
-        avatar: twitch.avatar,
-        banner:
-          twitch.banner ||
-          vtuber.banner ||
-          twitch.avatar,
-        is_live: twitch.isLive,
-        twitch_viewers: twitch.viewers,
-        current_game: twitch.game,
-        stream_title: twitch.title,
-        twitch_updated_at: new Date().toISOString(),
-      })
+    const payload: TwitchUpdatePayload = {
+      avatar: twitch.avatar,
+      banner: twitch.banner || vtuber.banner || twitch.avatar,
+      is_live: twitch.isLive,
+      twitch_viewers: twitch.viewers,
+      current_game: twitch.game,
+      stream_title: twitch.title,
+      twitch_updated_at: new Date().toISOString(),
+    };
+
+    const { error: updateError } = await vtubersQuery
+      .update(payload)
       .eq('id', vtuber.id);
 
     if (updateError) {

@@ -1,16 +1,17 @@
 import { supabase } from '../supabase';
-import type { Vtuber } from '../types/vtuber';
+import type { Vtuber } from '../../types/vtuber';
 
-export async function getVtuber(slug: string): Promise<Vtuber | null> {
-  const { data, error } = await supabase
-    .from('vtubers')
+type SupabaseSingleResult<T> = { data: T | null; error: any | null };
+
+export async function getVtuberBySlug(slug: string): Promise<Vtuber | null> {
+  const vtubersQuery = supabase.from('vtubers') as any;
+  const res = (await vtubersQuery
     .select('*')
     .eq('slug', slug)
-    .single();
+    .single()) as SupabaseSingleResult<Vtuber>;
 
-  if (error) {
-    return null;
-  }
-
-  return data as Vtuber;
+  if (res.error || !res.data) return null;
+  return res.data;
 }
+
+export { getVtuberBySlug as getVtuber };

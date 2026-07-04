@@ -1,4 +1,3 @@
-﻿// types/supabase.ts
 export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
 
 export interface Database {
@@ -90,7 +89,6 @@ export interface Database {
           updated_at?: string;
         };
       };
-      // otras tablas...
     };
     Views: {};
     Functions: {};
