@@ -1,8 +1,11 @@
+
 import { SiteFooter } from '../components/footer/site-footer';
 import { SiteHeader } from '../components/navbar/site-header';
 import { VtuberDirectory } from '../components/search/vtuber-directory';
 import { PageShell } from '../components/layout/page-shell';
 import { getVtubers } from '../lib/services/vtubers';
+
+export const revalidate = 60;
 
 export default async function HomePage() {
   const vtubers = await getVtubers();

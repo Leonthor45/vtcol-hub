@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
@@ -5,6 +6,8 @@ import { getVtuberBySlug, getVtubers } from '../../../lib/services/vtubers';
 import { LinkButton } from '../../../components/ui/link-button';
 import { PageShell } from '../../../components/layout/page-shell';
 import { formatCount, getSocialUrl, getYoutubeUrl } from '../../../lib/utils/vtuber';
+
+export const revalidate = 60;
 
 interface VtuberPageProps {
   params: Promise<{
