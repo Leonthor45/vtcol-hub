@@ -16,7 +16,7 @@ interface GenerateMetadataProps {
   params: Params;
 }
 
-interface PageProps {
+interface VtuberPageProps {
   params: Params;
   // searchParams?: Record<string, string | string[] | undefined>;
 }
@@ -57,7 +57,7 @@ export async function generateMetadata({ params }: GenerateMetadataProps): Promi
   };
 }
 
-export default async function VtuberPage({ params }: PageProps) {
+export default async function VtuberPage({ params }: VtuberPageProps) {
   const { slug } = params;
 
   const vtuber = await getVtuberBySlug(slug);
