@@ -2,17 +2,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-
 import { getVtuberBySlug, getVtubers } from '../../../lib/services/vtubers';
 import { LinkButton } from '../../../components/ui/link-button';
 import { PageShell } from '../../../components/layout/page-shell';
 import { formatCount, getSocialUrl, getYoutubeUrl } from '../../../lib/utils/vtuber';
 
-interface VtuberPageProps {
-  params: {
-    slug: string;
-  };
-}
+
 
 export async function generateStaticParams() {
   const vtubers = await getVtubers();
@@ -22,10 +17,11 @@ export async function generateStaticParams() {
   }));
 }
 
-export async function generateMetadata({
-  params,
-}: VtuberPageProps): Promise<Metadata> {
-  const { slug } = params;
+export async function generateMetadata(
+  { params }: { params: Promise<{ slug: string }> }
+): Promise<Metadata> {
+
+  const { slug } = await params;
 
   const vtuber = await getVtuberBySlug(slug);
 
@@ -52,10 +48,10 @@ export async function generateMetadata({
   };
 }
 
-export default async function VtuberPage({
-  params,
-}: VtuberPageProps) {
-  const { slug } = params;
+export default async function VtuberPage(
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await params;
 
   const vtuber = await getVtuberBySlug(slug);
 
@@ -81,10 +77,11 @@ const tiktokUrl = vtuber.tiktok
 const instagramUrl = vtuber.instagram
   ? getSocialUrl('instagram', vtuber.instagram)
   : null;
-
+  
 const twitterUrl = vtuber.twitter
   ? getSocialUrl('twitter', vtuber.twitter)
   : null;
+
   return (
     <PageShell>
       <main className="space-y-10">

@@ -2,7 +2,7 @@ import { supabase } from '../supabase';
 import type { Vtuber } from '../types/vtuber';
 
 export async function getVtuber(slug: string): Promise<Vtuber | null> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('vtubers')
     .select('*')
     .eq('slug', slug)
@@ -12,5 +12,5 @@ export async function getVtuber(slug: string): Promise<Vtuber | null> {
     return null;
   }
 
-  return data;
+  return data as Vtuber;
 }
