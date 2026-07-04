@@ -22,7 +22,7 @@ export function SearchBar({ value, onChange }: SearchBarProps) {
         value={value}
         onChange={handleInput}
         type="search"
-        placeholder="Buscar por nombre, Twitch o país..."
+        placeholder="Buscar por nombre, slug, Twitch o YouTube..."
         className="w-full bg-transparent text-white placeholder:text-slate-500 focus:outline-none"
       />
     </div>

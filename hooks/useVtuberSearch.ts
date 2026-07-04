@@ -1,90 +1,67 @@
 import { useMemo, useState } from 'react';
-import type { Vtuber } from '../types/vtuber';
+import type { Vtuber } from '../lib/types/vtuber';
 
-export type SortOption =
-  | 'live'
-  | 'twitch'
-  | 'youtube'
-  | 'name';
+type StatusFilter = 'all' | 'live' | 'offline' | 'featured';
+type SortOption = 'featured' | 'twitch' | 'youtube' | 'name';
 
 export function useVtuberSearch(vtubers: Vtuber[]) {
   const [query, setQuery] = useState('');
-
-  const [sortBy, setSortBy] =
-    useState<SortOption>('live');
-
-  const [showFilters, setShowFilters] =
-    useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('featured');
 
   const filteredVtubers = useMemo(() => {
     const normalized = query.trim().toLowerCase();
 
-    let result = vtubers;
+    const base = vtubers.filter((vtuber) => {
+      const haystack = [
+        vtuber.name,
+        vtuber.slug,
+        vtuber.twitch_username,
+        vtuber.youtube_channel_id,
+        vtuber.country,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
 
-    // ==========================
-    // BUSCADOR
-    // ==========================
+      const matchesQuery = !normalized || haystack.includes(normalized);
 
-    if (normalized) {
-      result = vtubers.filter((vtuber) => {
-        return (
-          vtuber.name.toLowerCase().includes(normalized) ||
-          vtuber.twitch_username
-            .toLowerCase()
-            .includes(normalized)
-        );
-      });
-    }
+      const matchesStatus =
+        statusFilter === 'all'
+          ? true
+          : statusFilter === 'featured'
+            ? vtuber.featured
+            : statusFilter === 'live'
+              ? vtuber.is_live
+              : !vtuber.is_live;
 
-    // ==========================
-    // ORDEN
-    // ==========================
-
-    result = [...result].sort((a, b) => {
-      switch (sortBy) {
-        case 'live':
-          if (a.is_live !== b.is_live) {
-            return Number(b.is_live) - Number(a.is_live);
-          }
-
-          return (
-            (b.twitch_followers ?? 0) -
-            (a.twitch_followers ?? 0)
-          );
-
-        case 'twitch':
-          return (
-            (b.twitch_followers ?? 0) -
-            (a.twitch_followers ?? 0)
-          );
-
-        case 'youtube':
-          return (
-            (b.youtube_subscribers ?? 0) -
-            (a.youtube_subscribers ?? 0)
-          );
-
-        case 'name':
-          return a.name.localeCompare(b.name);
-
-        default:
-          return 0;
-      }
+      return matchesQuery && matchesStatus;
     });
 
-    return result;
-  }, [query, sortBy, vtubers]);
+    return [...base].sort((a, b) => {
+      if (sortBy === 'twitch') {
+        return (b.twitch_followers ?? 0) - (a.twitch_followers ?? 0);
+      }
+
+      if (sortBy === 'youtube') {
+        return (b.youtube_subscribers ?? 0) - (a.youtube_subscribers ?? 0);
+      }
+
+      if (sortBy === 'name') {
+        return a.name.localeCompare(b.name);
+      }
+
+      return Number(b.featured) - Number(a.featured) || a.name.localeCompare(b.name);
+    });
+  }, [query, statusFilter, sortBy, vtubers]);
 
   return {
     query,
     setQuery,
-
+    statusFilter,
+    setStatusFilter,
     sortBy,
     setSortBy,
-
-    showFilters,
-    setShowFilters,
-
     filteredVtubers,
   };
 }
