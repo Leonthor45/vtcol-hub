@@ -1,31 +1,41 @@
 import type { Vtuber } from '../types/vtuber';
-import { mockVtubers } from '../data/mock-vtubers';
 import { supabase } from './supabase';
 
-const canUseSupabase = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-
 export async function getVtubers(): Promise<Vtuber[]> {
-  if (!canUseSupabase) {
-    return mockVtubers;
+  const { data, error } = await (supabase as any)
+    .from('vtubers')
+    .select('*')
+    .order('is_live', { ascending: false })
+    .order('featured', { ascending: false })
+    .order('twitch_followers', {
+      ascending: false,
+      nullsFirst: false,
+    })
+    .order('youtube_subscribers', {
+      ascending: false,
+      nullsFirst: false,
+    })
+    .order('name');
+
+  if (error) {
+    throw error;
   }
 
-  const { data, error } = await (supabase.from('vtubers') as any).select('*').order('featured', { ascending: false }).order('name');
-  if (error || !data) {
-    return mockVtubers;
-  }
-
-  return data;
+  return data as Vtuber[];
 }
 
-export async function getVtuberBySlug(slug: string): Promise<Vtuber | undefined> {
-  if (!canUseSupabase) {
-    return mockVtubers.find((vtuber) => vtuber.slug === slug);
-  }
+export async function getVtuberBySlug(
+  slug: string
+): Promise<Vtuber | undefined> {
+  const { data, error } = await (supabase as any)
+    .from('vtubers')
+    .select('*')
+    .eq('slug', slug)
+    .single();
 
-  const { data, error } = await (supabase.from('vtubers') as any).select('*').eq('slug', slug).limit(1).single();
   if (error || !data) {
-    return mockVtubers.find((vtuber) => vtuber.slug === slug);
+    return undefined;
   }
 
-  return data;
+  return data as Vtuber;
 }
