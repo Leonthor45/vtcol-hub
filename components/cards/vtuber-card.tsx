@@ -25,6 +25,16 @@ export function VtuberCard({ vtuber }: VtuberCardProps) {
   return (
     <article className="glass-card group overflow-hidden rounded-[30px] border border-white/10 p-6 shadow-soft transition-all duration-300 hover:-translate-y-2 hover:border-violet-500/40 hover:shadow-glow">
 
+          {/* BANNER */}
+    <Image
+      src={vtuber.banner || vtuber.avatar}
+      alt={`${vtuber.name} banner`}
+      width={1200}
+      height={320}
+      className="h-44 w-full object-cover"
+      priority={false}
+    />
+
       {/* CABECERA */}
       <div className="mb-6 flex items-center gap-4">
 
