@@ -15,4 +15,4 @@ jobs:
         run: |
           curl -X GET \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-            https://vtcol-hub-leonthor45s-projects.vercel.app/api/cron/update
+            https://vtcol-hub.vercel.app
