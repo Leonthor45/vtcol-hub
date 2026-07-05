@@ -1,0 +1,18 @@
+name: Actualizar VTubers
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ejecutar actualización
+        run: |
+          curl -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://vtcol-hub-leonthor45s-projects.vercel.app/api/cron/update
