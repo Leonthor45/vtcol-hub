@@ -14,5 +14,5 @@ jobs:
       - name: Ejecutar actualización
         run: |
           curl -X GET \
-            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET_GITHUB }}" \
             https://vtcol-hub.vercel.app/api/cron/update
