@@ -8,23 +8,27 @@ export function formatCount(value: number | null): string {
   }).format(value);
 }
 
-export function getYoutubeUrl(channelId: string): string {
+export function getYoutubeUrl(channelId: string | null): string {
+  if (!channelId) return '';
+
   const cleaned = channelId.replace(/^@/, '').trim();
-  if (!cleaned) {
-    return '';
-  }
+
+  if (!cleaned) return '';
 
   return cleaned.startsWith('UC')
     ? `https://youtube.com/channel/${cleaned}`
     : `https://youtube.com/@${cleaned}`;
 }
 
-export function getSocialUrl(platform: 'twitch' | 'tiktok' | 'instagram' | 'twitter', handle: string): string {
+export function getSocialUrl(
+  platform: 'twitch' | 'tiktok' | 'instagram' | 'twitter',
+  handle: string | null
+): string {
+  if (!handle) return '';
+
   const cleaned = handle.replace(/^@/, '').trim();
 
-  if (!cleaned) {
-    return '';
-  }
+  if (!cleaned) return '';
 
   switch (platform) {
     case 'twitch':
