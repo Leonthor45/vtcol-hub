@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '../../supabase-admin';
+import { getSupabaseAdmin } from '../../supabase-admin';
 import { getTwitchChannels } from '../twitch';
 import type { Database } from '../../types/supabase';
 import type { Vtuber } from '../../types/vtuber';
@@ -13,6 +13,8 @@ type TwitchUpdatePayload =
 
 export async function updateTwitch() {
   console.log('\n========== TWITCH ==========\n');
+
+  const supabaseAdmin = getSupabaseAdmin();
 
   const limite = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
@@ -43,9 +45,7 @@ export async function updateTwitch() {
   const updates = vtubers.map(async (vtuber) => {
     if (!vtuber.twitch_username) return;
 
-    const twitch = channels.get(
-      vtuber.twitch_username.toLowerCase()
-    );
+    const twitch = channels.get(vtuber.twitch_username.toLowerCase());
 
     if (!twitch) {
       console.log(`No encontrado: ${vtuber.name}`);
@@ -73,9 +73,7 @@ export async function updateTwitch() {
     }
 
     console.log(
-      `✓ ${vtuber.name} | ${
-        twitch.isLive ? '🔴 LIVE' : '⚫ Offline'
-      } | ${twitch.viewers} viewers`
+      `✓ ${vtuber.name} | ${twitch.isLive ? '🔴 LIVE' : '⚫ Offline'} | ${twitch.viewers} viewers`
     );
   });
 

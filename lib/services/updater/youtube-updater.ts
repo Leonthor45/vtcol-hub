@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '../../supabase-admin';
+import { getSupabaseAdmin } from '../../supabase-admin';
 import { getYoutubeChannels } from '../youtube';
 import type { Database } from '../../types/supabase';
 import type { Vtuber } from '../../types/vtuber';
@@ -13,6 +13,8 @@ type YoutubeUpdatePayload =
 
 export async function updateYoutube() {
   console.log('\n========== YOUTUBE ==========\n');
+
+  const supabaseAdmin = getSupabaseAdmin();
 
   const limite = new Date(Date.now() - 30 * 60 * 1000).toISOString();
 

@@ -4,7 +4,7 @@ import { getSupabase } from './supabase';
 export async function getVtubers(): Promise<Vtuber[]> {
   const supabase = getSupabase();
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('vtubers')
     .select('*')
     .order('is_live', { ascending: false })
@@ -19,11 +19,9 @@ export async function getVtubers(): Promise<Vtuber[]> {
     })
     .order('name');
 
-  if (error) {
-    throw error;
-  }
+  if (error) throw error;
 
-  return data as Vtuber[];
+  return (data ?? []) as Vtuber[];
 }
 
 export async function getVtuberBySlug(
@@ -31,7 +29,7 @@ export async function getVtuberBySlug(
 ): Promise<Vtuber | undefined> {
   const supabase = getSupabase();
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from('vtubers')
     .select('*')
     .eq('slug', slug)
