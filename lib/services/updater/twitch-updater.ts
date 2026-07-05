@@ -3,11 +3,13 @@ import { getTwitchChannels } from '../twitch';
 import type { Database } from '../../types/supabase';
 import type { Vtuber } from '../../types/vtuber';
 
-type SupabaseListResult<T> = { data: T[] | null; error: any | null };
+type SupabaseListResult<T> = {
+  data: T[] | null;
+  error: any | null;
+};
 
-type TwitchUpdatePayload = Database['public']['Tables']['vtubers']['Update'];
-
-const vtubersQuery = supabaseAdmin.from('vtubers') as any;
+type TwitchUpdatePayload =
+  Database['public']['Tables']['vtubers']['Update'];
 
 export async function updateTwitch() {
   console.log('\n========== TWITCH ==========\n');
@@ -15,7 +17,7 @@ export async function updateTwitch() {
   const limite = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
   const res = (await supabaseAdmin
-    .from('vtubers' as const)
+    .from('vtubers')
     .select('*')
     .or(`twitch_updated_at.is.null,twitch_updated_at.lt.${limite}`)) as unknown as SupabaseListResult<Vtuber>;
 
@@ -60,7 +62,8 @@ export async function updateTwitch() {
       twitch_updated_at: new Date().toISOString(),
     };
 
-    const { error: updateError } = await vtubersQuery
+    const { error: updateError } = await (supabaseAdmin
+      .from('vtubers') as any)
       .update(payload)
       .eq('id', vtuber.id);
 

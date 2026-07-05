@@ -3,13 +3,11 @@ import { getYoutubeChannels } from '../youtube';
 import type { Database } from '../../types/supabase';
 import type { Vtuber } from '../../types/vtuber';
 
-type SupabaseListResult<T> = {
-  data: T[] | null;
-  error: any | null;
-};
+type SupabaseListResult<T> = { data: T[] | null; error: any | null };
 
-type YoutubeUpdatePayload =
-  Database['public']['Tables']['vtubers']['Update'];
+type YoutubeUpdatePayload = Database['public']['Tables']['vtubers']['Update'];
+
+const vtubersQuery = supabaseAdmin.from('vtubers') as any;
 
 export async function updateYoutube() {
   console.log('\n========== YOUTUBE ==========\n');
@@ -56,8 +54,7 @@ export async function updateYoutube() {
       youtube_updated_at: new Date().toISOString(),
     };
 
-    const { error: updateError } = await (supabaseAdmin
-      .from('vtubers') as any)
+    const { error: updateError } = await vtubersQuery
       .update(payload)
       .eq('id', vtuber.id);
 
