@@ -57,6 +57,7 @@ export async function updateTwitch() {
       banner: twitch.banner || vtuber.banner || twitch.avatar,
       is_live: twitch.isLive,
       twitch_viewers: twitch.viewers,
+      twitch_followers: twitch.followers,
       current_game: twitch.game,
       stream_title: twitch.title,
       twitch_updated_at: new Date().toISOString(),
@@ -73,7 +74,7 @@ export async function updateTwitch() {
     }
 
     console.log(
-      `✓ ${vtuber.name} | ${twitch.isLive ? '🔴 LIVE' : '⚫ Offline'} | ${twitch.viewers} viewers`
+      `✓ ${vtuber.name} | ${twitch.isLive ? '🔴 LIVE' : '⚫ Offline'} | ${twitch.viewers} viewers | ${twitch.followers} followers`
     );
   });
 
