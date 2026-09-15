@@ -8,20 +8,17 @@ async function getAccessToken() {
     return accessToken;
   }
 
-  const response = await fetch(
-    "https://id.twitch.tv/oauth2/token",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
-        grant_type: "client_credentials",
-      }),
-    }
-  );
+  const response = await fetch("https://id.twitch.tv/oauth2/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
+      grant_type: "client_credentials",
+    }),
+  });
 
   if (!response.ok) {
     throw new Error("No fue posible obtener el token de Twitch.");
@@ -50,6 +47,29 @@ export interface TwitchChannel {
 }
 
 /**
+ * Obtiene el conteo de followers vía Decapi.
+ * (El endpoint oficial de Twitch requiere scope
+ * moderator:read:followers, no disponible con
+ * App Access Token / client_credentials).
+ */
+async function getFollowerCount(username: string): Promise<number> {
+  try {
+    const res = await fetch(
+      `https://decapi.me/twitch/followcount/${username}`,
+      { cache: "no-store" }
+    );
+
+    const text = await res.text();
+    const count = parseInt(text, 10);
+
+    return isNaN(count) ? 0 : count;
+  } catch (err) {
+    console.error(`Error obteniendo followers de ${username}:`, err);
+    return 0;
+  }
+}
+
+/**
  * Compatibilidad para un solo canal.
  */
 export async function getTwitchChannel(
@@ -61,8 +81,8 @@ export async function getTwitchChannel(
 }
 
 /**
- * Consulta hasta 100 canales usando únicamente
- * una petición a /users y una a /streams.
+ * Consulta hasta 100 canales usando /users y /streams,
+ * más followers vía Decapi (una petición por canal, en paralelo).
  */
 export async function getTwitchChannels(
   usernames: string[]
@@ -81,9 +101,7 @@ export async function getTwitchChannels(
 
   const usersUrl =
     "https://api.twitch.tv/helix/users?" +
-    unique
-      .map((u) => `login=${encodeURIComponent(u)}`)
-      .join("&");
+    unique.map((u) => `login=${encodeURIComponent(u)}`).join("&");
 
   const usersResponse = await fetch(usersUrl, {
     headers: {
@@ -105,9 +123,7 @@ export async function getTwitchChannels(
 
   const streamsUrl =
     "https://api.twitch.tv/helix/streams?" +
-    unique
-      .map((u) => `user_login=${encodeURIComponent(u)}`)
-      .join("&");
+    unique.map((u) => `user_login=${encodeURIComponent(u)}`).join("&");
 
   const streamsResponse = await fetch(streamsUrl, {
     headers: {
@@ -134,21 +150,35 @@ export async function getTwitchChannels(
   for (const user of usersJson.data ?? []) {
     const stream = liveMap.get(user.login.toLowerCase());
 
-result.set(user.login.toLowerCase(), {
-  username: user.login,
-  displayName: user.display_name,
+    result.set(user.login.toLowerCase(), {
+      username: user.login,
+      displayName: user.display_name,
 
-  avatar: user.profile_image_url,
-  banner: user.offline_image_url || null,
+      avatar: user.profile_image_url,
+      banner: user.offline_image_url || null,
 
-  followers: 0,
+      followers: 0, // se completa abajo
 
-  isLive: !!stream,
-  viewers: stream?.viewer_count ?? 0,
-  game: stream?.game_name ?? null,
-  title: stream?.title ?? null,
-});
+      isLive: !!stream,
+      viewers: stream?.viewer_count ?? 0,
+      game: stream?.game_name ?? null,
+      title: stream?.title ?? null,
+    });
   }
+
+  //
+  // FOLLOWERS (Decapi, en paralelo)
+  //
+
+  await Promise.all(
+    unique.map(async (username) => {
+      const key = username.toLowerCase();
+      const channel = result.get(key);
+      if (!channel) return;
+
+      channel.followers = await getFollowerCount(username);
+    })
+  );
 
   return result;
 }
