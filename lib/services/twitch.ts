@@ -38,6 +38,10 @@ export interface TwitchChannel {
   avatar: string;
   banner: string | null;
 
+  /**
+   * -1 significa "no se pudo obtener este ciclo" (fallo de Decapi).
+   * El updater debe ignorar ese valor y no sobreescribir el dato guardado.
+   */
   followers: number;
 
   isLive: boolean;
@@ -48,24 +52,59 @@ export interface TwitchChannel {
 
 /**
  * Obtiene el conteo de followers vía Decapi.
- * (El endpoint oficial de Twitch requiere scope
- * moderator:read:followers, no disponible con
- * App Access Token / client_credentials).
+ * Devuelve null si falla (timeout, rate limit, respuesta no numérica, etc.)
+ * en vez de asumir 0, para no borrar un dato bueno por un fallo temporal.
  */
-async function getFollowerCount(username: string): Promise<number> {
+async function getFollowerCount(username: string): Promise<number | null> {
   try {
     const res = await fetch(
       `https://decapi.me/twitch/followcount/${username}`,
       { cache: "no-store" }
     );
 
+    if (!res.ok) {
+      console.error(`Decapi respondió ${res.status} para ${username}`);
+      return null;
+    }
+
     const text = await res.text();
     const count = parseInt(text, 10);
 
-    return isNaN(count) ? 0 : count;
+    return isNaN(count) ? null : count;
   } catch (err) {
     console.error(`Error obteniendo followers de ${username}:`, err);
-    return 0;
+    return null;
+  }
+}
+
+/**
+ * Llena result[].followers en lotes pequeños (con pausa entre lotes)
+ * en vez de disparar todas las peticiones a Decapi en paralelo,
+ * para reducir el riesgo de rate limit / timeouts masivos.
+ */
+async function fillFollowers(
+  result: Map<string, TwitchChannel>,
+  usernames: string[],
+  batchSize = 5
+) {
+  for (let i = 0; i < usernames.length; i += batchSize) {
+    const batch = usernames.slice(i, i + batchSize);
+
+    await Promise.all(
+      batch.map(async (username) => {
+        const key = username.toLowerCase();
+        const channel = result.get(key);
+        if (!channel) return;
+
+        const count = await getFollowerCount(username);
+        channel.followers = count ?? -1;
+      })
+    );
+
+    // pequeña pausa entre lotes para no saturar Decapi
+    if (i + batchSize < usernames.length) {
+      await new Promise((r) => setTimeout(r, 300));
+    }
   }
 }
 
@@ -82,7 +121,7 @@ export async function getTwitchChannel(
 
 /**
  * Consulta hasta 100 canales usando /users y /streams,
- * más followers vía Decapi (una petición por canal, en paralelo).
+ * más followers vía Decapi en lotes controlados.
  */
 export async function getTwitchChannels(
   usernames: string[]
@@ -157,7 +196,7 @@ export async function getTwitchChannels(
       avatar: user.profile_image_url,
       banner: user.offline_image_url || null,
 
-      followers: 0, // se completa abajo
+      followers: -1, // se completa abajo; -1 = pendiente/fallido
 
       isLive: !!stream,
       viewers: stream?.viewer_count ?? 0,
@@ -167,18 +206,10 @@ export async function getTwitchChannels(
   }
 
   //
-  // FOLLOWERS (Decapi, en paralelo)
+  // FOLLOWERS (Decapi, en lotes)
   //
 
-  await Promise.all(
-    unique.map(async (username) => {
-      const key = username.toLowerCase();
-      const channel = result.get(key);
-      if (!channel) return;
-
-      channel.followers = await getFollowerCount(username);
-    })
-  );
+  await fillFollowers(result, unique);
 
   return result;
 }
