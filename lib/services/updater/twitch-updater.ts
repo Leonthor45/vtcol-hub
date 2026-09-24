@@ -57,11 +57,16 @@ export async function updateTwitch() {
       banner: twitch.banner || vtuber.banner || twitch.avatar,
       is_live: twitch.isLive,
       twitch_viewers: twitch.viewers,
-      twitch_followers: twitch.followers,
       current_game: twitch.game,
       stream_title: twitch.title,
       twitch_updated_at: new Date().toISOString(),
     };
+
+    // Solo actualizamos followers si Decapi respondió bien este ciclo.
+    // -1 significa que falló, así que no tocamos el valor ya guardado.
+    if (twitch.followers !== -1) {
+      payload.twitch_followers = twitch.followers;
+    }
 
     const { error: updateError } = await (supabaseAdmin
       .from('vtubers') as any)
@@ -73,8 +78,11 @@ export async function updateTwitch() {
       return;
     }
 
+    const followersLog =
+      twitch.followers === -1 ? '(sin cambios, Decapi falló)' : twitch.followers;
+
     console.log(
-      `✓ ${vtuber.name} | ${twitch.isLive ? '🔴 LIVE' : '⚫ Offline'} | ${twitch.viewers} viewers | ${twitch.followers} followers`
+      `✓ ${vtuber.name} | ${twitch.isLive ? '🔴 LIVE' : '⚫ Offline'} | ${twitch.viewers} viewers | ${followersLog} followers`
     );
   });
 
