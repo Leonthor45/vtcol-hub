@@ -3,11 +3,7 @@ const CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET!;
 
 let accessToken: string | null = null;
 
-async function getAccessToken() {
-  if (accessToken) {
-    return accessToken;
-  }
-
+async function fetchNewToken(): Promise<string> {
   const response = await fetch("https://id.twitch.tv/oauth2/token", {
     method: "POST",
     headers: {
@@ -25,10 +21,48 @@ async function getAccessToken() {
   }
 
   const json = await response.json();
+  return json.access_token;
+}
 
-  accessToken = json.access_token;
+async function getAccessToken(forceRefresh = false): Promise<string> {
+  if (accessToken && !forceRefresh) {
+    return accessToken;
+  }
 
+  accessToken = await fetchNewToken();
   return accessToken;
+}
+
+/**
+ * Hace un fetch a Twitch con el token actual.
+ * Si responde 401 (token expirado/inválido), pide un token nuevo
+ * y reintenta UNA vez antes de fallar.
+ */
+async function twitchFetch(url: string): Promise<Response> {
+  let token = await getAccessToken();
+
+  let response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Client-Id": CLIENT_ID,
+    },
+    cache: "no-store",
+  });
+
+  if (response.status === 401) {
+    console.warn("Token de Twitch inválido/expirado, renovando...");
+    token = await getAccessToken(true);
+
+    response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Client-Id": CLIENT_ID,
+      },
+      cache: "no-store",
+    });
+  }
+
+  return response;
 }
 
 export interface TwitchChannel {
@@ -101,7 +135,6 @@ async function fillFollowers(
       })
     );
 
-    // pequeña pausa entre lotes para no saturar Decapi
     if (i + batchSize < usernames.length) {
       await new Promise((r) => setTimeout(r, 300));
     }
@@ -130,8 +163,6 @@ export async function getTwitchChannels(
     return new Map();
   }
 
-  const token = await getAccessToken();
-
   const unique = [...new Set(usernames)];
 
   //
@@ -142,13 +173,7 @@ export async function getTwitchChannels(
     "https://api.twitch.tv/helix/users?" +
     unique.map((u) => `login=${encodeURIComponent(u)}`).join("&");
 
-  const usersResponse = await fetch(usersUrl, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Client-Id": CLIENT_ID,
-    },
-    cache: "no-store",
-  });
+  const usersResponse = await twitchFetch(usersUrl);
 
   if (!usersResponse.ok) {
     throw new Error("Error consultando usuarios de Twitch.");
@@ -164,13 +189,7 @@ export async function getTwitchChannels(
     "https://api.twitch.tv/helix/streams?" +
     unique.map((u) => `user_login=${encodeURIComponent(u)}`).join("&");
 
-  const streamsResponse = await fetch(streamsUrl, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Client-Id": CLIENT_ID,
-    },
-    cache: "no-store",
-  });
+  const streamsResponse = await twitchFetch(streamsUrl);
 
   if (!streamsResponse.ok) {
     throw new Error("Error consultando streams de Twitch.");
