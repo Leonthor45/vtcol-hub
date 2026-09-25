@@ -33,11 +33,6 @@ async function getAccessToken(forceRefresh = false): Promise<string> {
   return accessToken;
 }
 
-/**
- * Hace un fetch a Twitch con el token actual.
- * Si responde 401 (token expirado/inválido), pide un token nuevo
- * y reintenta UNA vez antes de fallar.
- */
 async function twitchFetch(url: string): Promise<Response> {
   let token = await getAccessToken();
 
@@ -72,10 +67,6 @@ export interface TwitchChannel {
   avatar: string;
   banner: string | null;
 
-  /**
-   * -1 significa "no se pudo obtener este ciclo" (fallo de Decapi).
-   * El updater debe ignorar ese valor y no sobreescribir el dato guardado.
-   */
   followers: number;
 
   isLive: boolean;
@@ -84,11 +75,6 @@ export interface TwitchChannel {
   title: string | null;
 }
 
-/**
- * Obtiene el conteo de followers vía Decapi.
- * Devuelve null si falla (timeout, rate limit, respuesta no numérica, etc.)
- * en vez de asumir 0, para no borrar un dato bueno por un fallo temporal.
- */
 async function getFollowerCount(username: string): Promise<number | null> {
   try {
     const res = await fetch(
@@ -111,11 +97,6 @@ async function getFollowerCount(username: string): Promise<number | null> {
   }
 }
 
-/**
- * Llena result[].followers en lotes pequeños (con pausa entre lotes)
- * en vez de disparar todas las peticiones a Decapi en paralelo,
- * para reducir el riesgo de rate limit / timeouts masivos.
- */
 async function fillFollowers(
   result: Map<string, TwitchChannel>,
   usernames: string[],
@@ -142,8 +123,17 @@ async function fillFollowers(
 }
 
 /**
- * Compatibilidad para un solo canal.
+ * Twitch permite máximo 100 logins por petición en /users y /streams.
+ * ESTA es la pieza que faltaba: divide el array en lotes de 100.
  */
+function chunk<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+}
+
 export async function getTwitchChannel(
   username: string
 ): Promise<TwitchChannel | null> {
@@ -152,10 +142,6 @@ export async function getTwitchChannel(
   return channels.get(username.toLowerCase()) ?? null;
 }
 
-/**
- * Consulta hasta 100 canales usando /users y /streams,
- * más followers vía Decapi en lotes controlados.
- */
 export async function getTwitchChannels(
   usernames: string[]
 ): Promise<Map<string, TwitchChannel>> {
@@ -164,48 +150,54 @@ export async function getTwitchChannels(
   }
 
   const unique = [...new Set(usernames)];
+  const batches = chunk(unique, 100);
 
-  //
-  // USERS
-  //
+  const usersData: any[] = [];
+  const streamsData: any[] = [];
 
-  const usersUrl =
-    "https://api.twitch.tv/helix/users?" +
-    unique.map((u) => `login=${encodeURIComponent(u)}`).join("&");
+  for (const batch of batches) {
+    //
+    // USERS
+    //
+    const usersUrl =
+      "https://api.twitch.tv/helix/users?" +
+      batch.map((u) => `login=${encodeURIComponent(u)}`).join("&");
 
-  const usersResponse = await twitchFetch(usersUrl);
+    const usersResponse = await twitchFetch(usersUrl);
 
-  if (!usersResponse.ok) {
-    throw new Error("Error consultando usuarios de Twitch.");
+    if (!usersResponse.ok) {
+      throw new Error("Error consultando usuarios de Twitch.");
+    }
+
+    const usersJson = await usersResponse.json();
+    usersData.push(...(usersJson.data ?? []));
+
+    //
+    // STREAMS
+    //
+    const streamsUrl =
+      "https://api.twitch.tv/helix/streams?" +
+      batch.map((u) => `user_login=${encodeURIComponent(u)}`).join("&");
+
+    const streamsResponse = await twitchFetch(streamsUrl);
+
+    if (!streamsResponse.ok) {
+      throw new Error("Error consultando streams de Twitch.");
+    }
+
+    const streamsJson = await streamsResponse.json();
+    streamsData.push(...(streamsJson.data ?? []));
   }
-
-  const usersJson = await usersResponse.json();
-
-  //
-  // STREAMS
-  //
-
-  const streamsUrl =
-    "https://api.twitch.tv/helix/streams?" +
-    unique.map((u) => `user_login=${encodeURIComponent(u)}`).join("&");
-
-  const streamsResponse = await twitchFetch(streamsUrl);
-
-  if (!streamsResponse.ok) {
-    throw new Error("Error consultando streams de Twitch.");
-  }
-
-  const streamsJson = await streamsResponse.json();
 
   const liveMap = new Map<string, any>();
 
-  for (const stream of streamsJson.data ?? []) {
+  for (const stream of streamsData) {
     liveMap.set(stream.user_login.toLowerCase(), stream);
   }
 
   const result = new Map<string, TwitchChannel>();
 
-  for (const user of usersJson.data ?? []) {
+  for (const user of usersData) {
     const stream = liveMap.get(user.login.toLowerCase());
 
     result.set(user.login.toLowerCase(), {
@@ -215,7 +207,7 @@ export async function getTwitchChannels(
       avatar: user.profile_image_url,
       banner: user.offline_image_url || null,
 
-      followers: -1, // se completa abajo; -1 = pendiente/fallido
+      followers: -1,
 
       isLive: !!stream,
       viewers: stream?.viewer_count ?? 0,
